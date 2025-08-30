@@ -47,6 +47,8 @@ function getUsers() {
 function findUser(email) {
     const users = getUsers();
     const encryptedEmail = encrypt(email);
+    
+    // First try with encrypted email as key
     if (users[encryptedEmail]) {
         const user = users[encryptedEmail];
         return {
@@ -58,21 +60,45 @@ function findUser(email) {
             createdAt: user.createdAt
         };
     }
+    
+    // Fallback: search through all users (in case of key mismatch)
+    for (const key in users) {
+        try {
+            const user = users[key];
+            const userEmail = decrypt(user.email);
+            if (userEmail === email) {
+                return {
+                    firstName: decrypt(user.firstName),
+                    lastName: decrypt(user.lastName),
+                    email: decrypt(user.email),
+                    password: decrypt(user.password),
+                    verified: user.verified,
+                    createdAt: user.createdAt
+                };
+            }
+        } catch (e) {
+            continue;
+        }
+    }
+    
     return null;
 }
 
-// Email service simulation (replace with real email service)
+// Real email service using EmailJS
 async function sendVerificationEmail(email, code) {
-    // In production, use a real email service like EmailJS, SendGrid, etc.
-    console.log(`Sending verification code ${code} to ${email}`);
-    
-    // Simulate email sending delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // For demo purposes, show alert instead of console
-    alert(`Demo: Verification code sent to ${email}\n\nIn production, this would be sent via email service.\n\nFor testing, use code: ${code}`);
-    
-    return true;
+    try {
+        const templateParams = {
+            to_email: email,
+            verification_code: code,
+            app_name: 'FlightFinder'
+        };
+
+        await emailjs.send('service_flightfinder', 'template_verification', templateParams, 'YOUR_PUBLIC_KEY');
+        return true;
+    } catch (error) {
+        console.error('Email sending failed:', error);
+        throw new Error('Failed to send verification email');
+    }
 }
 
 // Event listeners

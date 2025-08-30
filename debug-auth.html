@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Auth</title>
+</head>
+<body>
+    <h3>Debug Authentication Storage</h3>
+    <button onclick="checkStorage()">Check Storage</button>
+    <button onclick="clearStorage()">Clear All Data</button>
+    <pre id="output"></pre>
+
+    <script>
+        function encrypt(text) {
+            return btoa(unescape(encodeURIComponent(text)));
+        }
+
+        function decrypt(data) {
+            return decodeURIComponent(escape(atob(data)));
+        }
+
+        function checkStorage() {
+            const output = document.getElementById('output');
+            let result = 'LocalStorage Contents:\n\n';
+            
+            // Check all localStorage items
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                const value = localStorage.getItem(key);
+                result += `${key}: ${value}\n\n`;
+                
+                if (key === 'ff_users') {
+                    try {
+                        const decrypted = decrypt(value);
+                        result += `Decrypted ff_users: ${decrypted}\n\n`;
+                    } catch (e) {
+                        result += `Error decrypting ff_users: ${e.message}\n\n`;
+                    }
+                }
+            }
+            
+            output.textContent = result;
+        }
+
+        function clearStorage() {
+            localStorage.clear();
+            alert('All localStorage data cleared');
+            checkStorage();
+        }
+    </script>
+</body>
+</html>
