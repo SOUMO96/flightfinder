@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlightFinder - Premium Flight Search</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="header-left">
+                    <h1>FlightFinder</h1>
+                    <p>Discover the world with premium flight search experience</p>
+                </div>
+                <div class="header-right">
+                    <div class="user-info" id="userInfo">
+                        <span class="welcome-text">Welcome, <span id="userName"></span></span>
+                        <button class="logout-btn" id="logoutBtn">Logout</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="search-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="departure">From</label>
+                    <input type="text" id="departure" placeholder="Departure city">
+                </div>
+                <div class="form-group">
+                    <label for="arrival">To</label>
+                    <input type="text" id="arrival" placeholder="Arrival city">
+                </div>
+                <div class="form-group">
+                    <label for="date">Departure Date</label>
+                    <input type="date" id="date">
+                </div>
+            </div>
+            <button id="searchBtn" class="search-btn">Search Flights</button>
+        </div>
+
+        <!-- Auth Required Message -->
+        <div id="authRequired" class="auth-required hidden">
+            <div class="auth-message">
+                <div class="auth-icon">🔒</div>
+                <h3>Create an account first to see the results</h3>
+                <p>Join FlightFinder to access exclusive flight deals and personalized search results</p>
+                <div class="auth-buttons">
+                    <a href="auth.html" class="auth-btn primary">Sign Up</a>
+                    <a href="auth.html" class="auth-btn secondary">Sign In</a>
+                </div>
+            </div>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Searching premium flights...</p>
+        </div>
+
+        <div id="results" class="results hidden">
+            <h2>Available Flights</h2>
+            <div id="flightList" class="flight-list"></div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
