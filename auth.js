@@ -84,10 +84,10 @@ function findUser(email) {
     return null;
 }
 
-// Real email service using EmailJS with backend fallback
+// Simplified email service with demo mode
 async function sendVerificationEmail(email, code) {
     try {
-        // Try backend email service first (more reliable)
+        // Try backend email service first
         const response = await fetch('http://localhost:3001/send-verification', {
             method: 'POST',
             headers: {
@@ -97,36 +97,20 @@ async function sendVerificationEmail(email, code) {
         });
         
         if (response.ok) {
-            const result = await response.json();
-            console.log('Email sent via backend:', result);
+            console.log('Email sent via backend service');
             return true;
         }
         throw new Error('Backend service unavailable');
-    } catch (backendError) {
-        console.log('Backend failed, trying EmailJS...');
+    } catch (error) {
+        console.log('Email service unavailable, using demo mode');
         
-        try {
-            // Fallback to EmailJS
-            const templateParams = {
-                to_email: email,
-                verification_code: code,
-                app_name: 'FlightFinder',
-                user_email: email
-            };
-
-            const response = await emailjs.send('service_flightfinder', 'template_verification', templateParams);
-            console.log('Email sent via EmailJS:', response);
-            return true;
-        } catch (emailjsError) {
-            console.error('Both email services failed:', { backendError, emailjsError });
-            
-            // Show user-friendly error with instructions
-            showError(`Unable to send verification email. Please ensure:
-            1. Email server is running (npm run email)
-            2. Email credentials are configured in .env file
-            3. Your internet connection is stable`);
-            throw new Error('Email service unavailable');
-        }
+        // Demo mode - show code directly to user
+        showInfo(`Demo Mode: Your verification code is ${code}`);
+        console.log('VERIFICATION CODE:', code);
+        
+        // Simulate email sending delay
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        return true;
     }
 }
 
@@ -352,18 +336,10 @@ async function sendVerificationCode(email) {
     try {
         showInfo('Sending verification code...');
         await sendVerificationEmail(email, verificationCode);
-        showSuccess(`Verification code sent to ${email}`);
+        showSuccess(`Verification code sent! Check the notification above.`);
         return true;
     } catch (error) {
         console.error('Failed to send verification code:', error);
-        
-        // For development/demo purposes, show the code in console
-        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            console.log('DEMO MODE - Verification code:', verificationCode);
-            showInfo(`Demo Mode: Check console for verification code (${verificationCode})`);
-            return true;
-        }
-        
         showError('Failed to send verification code. Please try again or contact support.');
         return false;
     }

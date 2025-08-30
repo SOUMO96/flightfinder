@@ -6,9 +6,9 @@
   "scripts": {
     "start": "node server.js",
     "start-all": "node start-servers.js",
+    "demo": "node start-demo.js",
     "dev": "nodemon server.js",
     "setup": "node setup.js",
-    "demo": "node demo-server.js",
     "email": "node email-server.js"
   },
   "dependencies": {
