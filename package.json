@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "start-all": "node start-servers.js",
     "dev": "nodemon server.js",
     "setup": "node setup.js",
     "demo": "node demo-server.js",

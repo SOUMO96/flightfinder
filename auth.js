@@ -87,40 +87,45 @@ function findUser(email) {
 // Real email service using EmailJS with backend fallback
 async function sendVerificationEmail(email, code) {
     try {
-        // Try EmailJS first
-        const templateParams = {
-            to_email: email,
-            verification_code: code,
-            app_name: 'FlightFinder',
-            user_email: email
-        };
-
-        const response = await emailjs.send('service_flightfinder', 'template_verification', templateParams);
-        console.log('Email sent via EmailJS:', response);
-        return true;
-    } catch (emailjsError) {
-        console.log('EmailJS failed, trying backend service...');
+        // Try backend email service first (more reliable)
+        const response = await fetch('http://localhost:3001/send-verification', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ email, code })
+        });
         
-        try {
-            // Fallback to backend email service
-            const response = await fetch('http://localhost:3001/send-verification', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, code })
-            });
-            
-            if (!response.ok) {
-                throw new Error('Backend email service failed');
-            }
-            
+        if (response.ok) {
             const result = await response.json();
             console.log('Email sent via backend:', result);
             return true;
-        } catch (backendError) {
-            console.error('Both email services failed:', { emailjsError, backendError });
-            throw new Error('Failed to send verification email. Please check your email address.');
+        }
+        throw new Error('Backend service unavailable');
+    } catch (backendError) {
+        console.log('Backend failed, trying EmailJS...');
+        
+        try {
+            // Fallback to EmailJS
+            const templateParams = {
+                to_email: email,
+                verification_code: code,
+                app_name: 'FlightFinder',
+                user_email: email
+            };
+
+            const response = await emailjs.send('service_flightfinder', 'template_verification', templateParams);
+            console.log('Email sent via EmailJS:', response);
+            return true;
+        } catch (emailjsError) {
+            console.error('Both email services failed:', { backendError, emailjsError });
+            
+            // Show user-friendly error with instructions
+            showError(`Unable to send verification email. Please ensure:
+            1. Email server is running (npm run email)
+            2. Email credentials are configured in .env file
+            3. Your internet connection is stable`);
+            throw new Error('Email service unavailable');
         }
     }
 }
@@ -210,9 +215,11 @@ async function handleLogin(e) {
     
     if (!user.verified) {
         pendingEmail = email;
-        await sendVerificationCode(email);
-        showForm('verification');
-        document.getElementById('verificationEmail').textContent = email;
+        const emailSent = await sendVerificationCode(email);
+        if (emailSent) {
+            showForm('verification');
+            document.getElementById('verificationEmail').textContent = email;
+        }
         showLoading(false);
         return;
     }
@@ -282,12 +289,16 @@ async function handleSignup(e) {
     saveUser(userData);
     
     pendingEmail = email;
-    await sendVerificationCode(email);
-    showForm('verification');
-    document.getElementById('verificationEmail').textContent = email;
+    const emailSent = await sendVerificationCode(email);
+    if (emailSent) {
+        showForm('verification');
+        document.getElementById('verificationEmail').textContent = email;
+        showSuccess('Account created! Please check your email for verification code.');
+    } else {
+        showError('Account created but failed to send verification email. Please try logging in.');
+    }
     
     showLoading(false);
-    showSuccess('Account created! Please check your email for verification code.');
 }
 
 // Handle verification
@@ -342,16 +353,29 @@ async function sendVerificationCode(email) {
         showInfo('Sending verification code...');
         await sendVerificationEmail(email, verificationCode);
         showSuccess(`Verification code sent to ${email}`);
+        return true;
     } catch (error) {
         console.error('Failed to send verification code:', error);
-        showError('Failed to send verification code. Please check your email address and try again.');
-        throw error;
+        
+        // For development/demo purposes, show the code in console
+        if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+            console.log('DEMO MODE - Verification code:', verificationCode);
+            showInfo(`Demo Mode: Check console for verification code (${verificationCode})`);
+            return true;
+        }
+        
+        showError('Failed to send verification code. Please try again or contact support.');
+        return false;
     }
 }
 
 // Resend verification code
 async function resendVerificationCode(e) {
     e.preventDefault();
+    if (!pendingEmail) {
+        showError('No pending email verification found');
+        return;
+    }
     await sendVerificationCode(pendingEmail);
 }
 

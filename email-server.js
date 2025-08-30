@@ -8,7 +8,7 @@ app.use(cors());
 app.use(express.json());
 
 // Gmail transporter
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
         user: process.env.EMAIL_USER || 'your-email@gmail.com',
