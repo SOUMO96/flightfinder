@@ -84,20 +84,44 @@ function findUser(email) {
     return null;
 }
 
-// Real email service using EmailJS
+// Real email service using EmailJS with backend fallback
 async function sendVerificationEmail(email, code) {
     try {
+        // Try EmailJS first
         const templateParams = {
             to_email: email,
             verification_code: code,
-            app_name: 'FlightFinder'
+            app_name: 'FlightFinder',
+            user_email: email
         };
 
-        await emailjs.send('service_flightfinder', 'template_verification', templateParams, 'YOUR_PUBLIC_KEY');
+        const response = await emailjs.send('service_flightfinder', 'template_verification', templateParams);
+        console.log('Email sent via EmailJS:', response);
         return true;
-    } catch (error) {
-        console.error('Email sending failed:', error);
-        throw new Error('Failed to send verification email');
+    } catch (emailjsError) {
+        console.log('EmailJS failed, trying backend service...');
+        
+        try {
+            // Fallback to backend email service
+            const response = await fetch('http://localhost:3001/send-verification', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, code })
+            });
+            
+            if (!response.ok) {
+                throw new Error('Backend email service failed');
+            }
+            
+            const result = await response.json();
+            console.log('Email sent via backend:', result);
+            return true;
+        } catch (backendError) {
+            console.error('Both email services failed:', { emailjsError, backendError });
+            throw new Error('Failed to send verification email. Please check your email address.');
+        }
     }
 }
 
@@ -315,10 +339,13 @@ async function sendVerificationCode(email) {
     verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
     
     try {
+        showInfo('Sending verification code...');
         await sendVerificationEmail(email, verificationCode);
-        showInfo(`Verification code sent to ${email}`);
+        showSuccess(`Verification code sent to ${email}`);
     } catch (error) {
-        showError('Failed to send verification code. Please try again.');
+        console.error('Failed to send verification code:', error);
+        showError('Failed to send verification code. Please check your email address and try again.');
+        throw error;
     }
 }
 
