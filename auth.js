@@ -30,7 +30,7 @@ function saveUser(userData) {
         verified: userData.verified,
         createdAt: userData.createdAt
     };
-    users[encrypt(userData.email)] = encryptedUser;
+    users[userData.email.toLowerCase()] = encryptedUser;
     localStorage.setItem('ff_users', encrypt(JSON.stringify(users)));
 }
 
@@ -46,27 +46,31 @@ function getUsers() {
 
 function findUser(email) {
     const users = getUsers();
-    const encryptedEmail = encrypt(email);
+    const emailKey = email.toLowerCase();
     
-    // First try with encrypted email as key
-    if (users[encryptedEmail]) {
-        const user = users[encryptedEmail];
-        return {
-            firstName: decrypt(user.firstName),
-            lastName: decrypt(user.lastName),
-            email: decrypt(user.email),
-            password: decrypt(user.password),
-            verified: user.verified,
-            createdAt: user.createdAt
-        };
+    // Direct lookup with email as key
+    if (users[emailKey]) {
+        const user = users[emailKey];
+        try {
+            return {
+                firstName: decrypt(user.firstName),
+                lastName: decrypt(user.lastName),
+                email: decrypt(user.email),
+                password: decrypt(user.password),
+                verified: user.verified,
+                createdAt: user.createdAt
+            };
+        } catch (e) {
+            console.log('Error decrypting user data:', e);
+        }
     }
     
-    // Fallback: search through all users (in case of key mismatch)
+    // Fallback: search through all users (for backward compatibility)
     for (const key in users) {
         try {
             const user = users[key];
             const userEmail = decrypt(user.email);
-            if (userEmail === email) {
+            if (userEmail.toLowerCase() === email.toLowerCase()) {
                 return {
                     firstName: decrypt(user.firstName),
                     lastName: decrypt(user.lastName),
@@ -77,6 +81,7 @@ function findUser(email) {
                 };
             }
         } catch (e) {
+            console.log('Error decrypting user data:', e);
             continue;
         }
     }
